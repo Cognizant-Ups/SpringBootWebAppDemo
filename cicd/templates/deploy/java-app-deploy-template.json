@@ -1,0 +1,279 @@
+{
+	"kind": "Template",
+	"apiVersion": "v1",
+	"metadata": {
+		"name": "java-app-deploy",
+		"creationTimestamp": null,
+		"annotations": {
+			"description": "Template for Java applications listening on port 8080 with Git source and strategy s2i",
+			"iconClass": "icon-shadowman",
+			"tags": "web-app-template,java-app-template,https,s2i"
+		}
+	},
+	"objects": [{
+		"kind": "ImageStream",
+		"apiVersion": "v1",
+		"metadata": {
+			"name": "${MICROSERVICE_NAME}",
+			"generation": 1,
+			"labels": {
+				"microservice": "${MICROSERVICE_NAME}",
+				"application": "${APPLICATION_NAME}",
+				"group": "${APPLICATION_ID}"
+			}
+		},
+		"spec": {
+			
+		},
+		"status": {
+			"dockerImageRepository": ""
+		}
+	},
+	{
+		"kind": "Service",
+		"apiVersion": "v1",
+		"spec": {
+			"ports": [{
+				"protocol": "TCP",
+				"name": "http",
+				"port": 8080,
+				"targetPort": 8080
+			}],
+			"selector": {
+				"deploymentConfig": "${MICROSERVICE_NAME}"
+			}
+		},
+		"metadata": {
+			"name": "${MICROSERVICE_NAME}",
+			"labels": {
+				"microservice": "${MICROSERVICE_NAME}",
+				"application": "${APPLICATION_NAME}",
+				"cmdb": "${APPLICATION_ID}"
+			},
+			"annotations": {
+				"description": "The web server's http port."
+			}
+		}
+	},
+	{
+		"kind": "Route",
+		"apiVersion": "v1",
+		"id": "${MICROSERVICE_NAME}",
+		"metadata": {
+			"name": "${MICROSERVICE_NAME}",
+			"labels": {
+				"microservice": "${MICROSERVICE_NAME}",
+				"application": "${APPLICATION_NAME}",
+				"cmdb": "${APPLICATION_ID}"
+			},
+			"annotations": {
+				"description": "Route for application's http service."
+			}
+		},
+		"spec": {
+			"host": "${HOSTNAME_HTTP}",
+			"to": {
+				"kind": "Service",
+				"name": "${MICROSERVICE_NAME}"
+			},
+			"tls": {
+				"insecureEdgeTerminationPolicy": "Redirect",
+				"termination": "edge"
+			}
+		}
+	},
+	{
+		"kind": "DeploymentConfig",
+		"apiVersion": "v1",
+		"metadata": {
+			"name": "${MICROSERVICE_NAME}",
+			"labels": {
+				"microservice": "${MICROSERVICE_NAME}",
+				"application": "${APPLICATION_NAME}",
+				"group": "${APPLICATION_ID}",
+				"version": "${VERSION_NUMBER}",
+          			"gitCommit": "${GIT_COMMIT}"
+			}
+		},
+		"spec": {
+			"strategy": {
+				"type": "Rolling",
+				"rollingParams": {
+					"updatePeriodSeconds": 1,
+					"intervalSeconds": 1,
+					"timeoutSeconds": 600,
+					"maxUnavailable": "0%",
+					"maxSurge": "20%"
+				},
+				"resources": {
+					
+				}
+			},
+			"triggers": [{
+				"type": "ImageChange",
+				"imageChangeParams": {
+					"automatic": true,
+					"containerNames": ["${MICROSERVICE_NAME}"],
+					"from": {
+						"kind": "ImageStream",
+						"name": "${MICROSERVICE_NAME}"
+					}
+				}
+			}],
+			"replicas": "${{NUM_REPLICAS}}",
+			"selector": {
+				"deploymentConfig": "${MICROSERVICE_NAME}"
+			},
+			"template": {
+				"metadata": {
+					"name": "${MICROSERVICE_NAME}",
+					"labels": {
+						"deploymentConfig": "${MICROSERVICE_NAME}",
+						"microservice": "${MICROSERVICE_NAME}",
+						"application": "${APPLICATION_NAME}",
+						"group": "${APPLICATION_ID}",
+						"version": "${VERSION_NUMBER}",
+              					"gitCommit": "${GIT_COMMIT}"
+					}
+				},
+				"spec": {
+					"terminationGracePeriodSeconds": 100,
+					"volumes": [],
+					"containers": [{
+						"name": "${MICROSERVICE_NAME}",
+						"image": "${MICROSERVICE_NAME}",
+						"readinessProbe": {
+							"tcpSocket": {
+								"port": 8080
+							},
+							"initialDelaySeconds": "${{READINESS_DELAY}}",
+							"timeoutSeconds": 10
+						},
+						"volumeMounts": [],
+						"livenessProbe": {
+							"tcpSocket": {
+								"port": 8080
+							},
+							"initialDelaySeconds": "${{LIVENESS_DELAY}}",
+							"timeoutSeconds": 10
+						},
+						"ports": [{
+							"name": "http",
+							"containerPort": 8080,
+							"protocol": "TCP"
+						}],
+						"resources": {
+							"requests": {
+								"cpu": "${DEPLOY_CPU_REQUEST}",
+								"memory": "${DEPLOY_MEM_REQUEST}"
+							},
+							"limits": {
+								"cpu": "${DEPLOY_CPU_LIMIT}",
+								"memory": "${DEPLOY_MEM_LIMIT}"
+							}
+						},
+						"env": [{
+							"name": "APP_POD_NAME",
+							"valueFrom": {
+								"fieldRef": {
+									"fieldPath": "metadata.name"
+								}
+							}
+						},
+						{
+							"name": "APP_POD_NAMESPACE",
+							"valueFrom": {
+								"fieldRef": {
+									"fieldPath": "metadata.namespace"
+								}
+							}
+						},
+						{
+							"name": "GROUP",
+							"value": "${APPLICATION_ID}"
+						}]
+					}]
+				}
+			}
+		}
+	}],
+	"parameters": [{
+		"name": "MICROSERVICE_NAME",
+		"description": "Name of the microservice.",
+		"value": "my-microservice",
+		"required": true
+	},
+	{
+		"name": "APPLICATION_NAME",
+		"description": "Name of the application the microservice belongs to",
+		"value": "my-application",
+		"required": true
+	},
+	{
+		"name": "APPLICATION_ID",
+		"description": "ID of the application the microservice belongs to",
+		"value": "my-application-id",
+		"required": true
+	},
+	{
+		"name": "HOSTNAME_HTTP",
+		"description": "Custom hostname for http service route.  Leave blank for default hostname, e.g.: \u003capplication-name\u003e-\u003cproject\u003e.\u003cdefault-domain-suffix\u003e"
+	},
+	{
+		"name": "LIVENESS_DELAY",
+		"value": "10",
+		"description": "Intial mount of time in seconds to wait to perform a liveness check.",
+		"required": true
+	},
+	{
+		"name": "READINESS_DELAY",
+		"value": "60",
+		"description": "Intial mount of time in seconds to wait to perform a readiness check.",
+		"required": true
+	},
+	{
+		"name": "NUM_REPLICAS",
+		"value": "1",
+		"description": "Initial number of replicas to deploy",
+		"required": true
+	},
+	{
+		"name": "DEPLOY_CPU_REQUEST",
+		"description": "The requested CPU for a deploy.",
+		"value": "100m",
+		"required": true
+	},
+	{
+		"name": "DEPLOY_MEM_REQUEST",
+		"description": "The requested memory for a deploy",
+		"value": "1200Mi",
+		"required": true
+	},
+	{
+		"name": "DEPLOY_CPU_LIMIT",
+		"description": "The limit of CPU to allow for a deploy",
+		"value": "1000m",
+		"required": true
+	},
+	{
+		"name": "DEPLOY_MEM_LIMIT",
+		"description": "The limit of memory to allow for a deploy",
+		"value": "1200Mi",
+		"required": true
+	},
+	{
+		"name": "VERSION_NUMBER",
+		"description": "Version of deployment.",
+		"value": "1.0",
+		"required": true
+	},
+	{
+		"name": "GIT_COMMIT",
+		"description": "Git commit of image.",
+		"value": "-",
+		"required": true
+	}],
+	"labels": {
+		"template": "java-app-deploy"
+	}
+}
