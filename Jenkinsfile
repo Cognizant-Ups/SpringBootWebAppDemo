@@ -1,5 +1,6 @@
 application = env.APP_NAME
 applicationId = env.APP_ID
+applicationType = env.APP_TYPE
 
 // Declare microservice name
 microservice = env.MICROSERVICE_NAME
@@ -53,9 +54,7 @@ node() {
         // Checkout the external Jenkinsfile
         gitCheckout(workspace, masterJenkinsfileGitURL, masterJenkinsfileGitBranch, gitCredentialsId, repoName)
 
-        pipeline = load '${repoName}/master-pipeline/Jenkinsfile'
-
-        pipeline = load "${repoName}/infrastructure/jenkins/Jenkinsfile"
+        pipeline = load '${repoName}/master-pipeline/${applicationType}/Jenkinsfile'
 }
 
 pipeline.main()
