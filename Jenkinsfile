@@ -1,5 +1,10 @@
-application = env.APP_NAME
+// Declare the Application Id
 applicationId = env.APP_ID
+
+// Declare application name
+application = env.APP_NAME
+
+// Declare application type java or dot-net
 applicationType = env.APP_TYPE
 
 // Declare microservice name
