@@ -11,6 +11,10 @@ gitContextDir = env.GIT_CONTEXT_DIR
 gitBranch = env.GIT_BRANCH
 gitCommit = null
 
+// Pull in default Jenkinsfile
+masterJenkinsfileGitURL = env.CICD_GIT_URL
+masterJenkinsfileGitBranch = env.CICD_GIT_BRANCH
+
 // Build requests and limits
 buildCPURequest = '100m'
 buildMemRequest = '1000Mi'
@@ -43,6 +47,14 @@ node() {
         versionNumber = pom.version
         print "POM Artifact Version:: ${versionNumber}"
 
+        repoName = masterJenkinsfileGitURL.replaceAll("\\.git", "").split("/")[-1]
+        print "Master Jenkinsfile Git URL: ${masterJenkinsfileGitURL}, Repository Name:: ${repoName}"
+
+        // Checkout the external Jenkinsfile
+        gitCheckout(workspace, masterJenkinsfileGitURL, masterJenkinsfileGitBranch, gitCredentialsId, repoName)
+
+        pipeline = load '${repoName}/master-pipeline/Jenkinsfile'
+
         pipeline = load "${repoName}/infrastructure/jenkins/Jenkinsfile"
 }
 
@@ -61,6 +73,8 @@ def gitCheckout(String workspace, String url, String branch, String credentialsI
                 sh """
                         rm -rf ${repository}
                         git clone -b ${branch} ${url}
+                        cd ${workspace}
+                        echo `pwd && ls -l`
                 """
         }
 }
