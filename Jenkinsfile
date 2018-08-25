@@ -59,7 +59,7 @@ node() {
         // Checkout the external Jenkinsfile
         gitCheckout(workspace, masterJenkinsfileGitURL, masterJenkinsfileGitBranch, gitCredentialsId, repoName)
 
-        pipeline = load "${repoName}/master-cicd/${applicationType}/Jenkinsfile"
+        pipeline = load "${repoName}/master-jenkins/${applicationType}/Jenkinsfile"
 }
 
 pipeline.main()
