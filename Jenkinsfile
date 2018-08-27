@@ -1,5 +1,5 @@
 // Declare the script type of OS on which Jenkins Running i.e. bat or shell
-slave = env.JENKINS_OS_SCRIPT_TYPE
+scriptType = env.JENKINS_OS_SCRIPT_TYPE
 
 // Declare the Application Id
 applicationId = env.APP_ID
@@ -49,7 +49,7 @@ pipeline = null
 def jenkinsFile
 stage('Loading Jenkins file') {
 	repoName = gitURL.replaceAll("\\.git", "").split("/")[-1]
-	jenkinsFile = load "${repoName}/cicd/jenkins/${slave}/Jenkinsfile"
+	jenkinsFile = load "${repoName}/cicd/jenkins/${scriptType}/Jenkinsfile"
 }
 
 jenkinsFile.start()
