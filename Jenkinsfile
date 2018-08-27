@@ -6,7 +6,7 @@ gitURL = env.GIT_URL
 
 def jenkinsFile
 stage('Loading Jenkins file') {
-        repoName = gitURL.replaceAll("\\.git", "").split("/")[-1]
+	repoName = gitURL.replaceAll("\\.git", "").split("/")[-1]
 	jenkinsFile = load "${repoName}/cicd/jenkins/${slave}/Jenkinsfile"
 }
 
