@@ -15,6 +15,7 @@ public class WebConfiguration {
      *
      * @return the servlet registration bean
      */
+    @SuppressWarnings("unchecked")
     @Bean
     ServletRegistrationBean h2servletRegistration(){
         ServletRegistrationBean registrationBean = new ServletRegistrationBean( new WebServlet());
